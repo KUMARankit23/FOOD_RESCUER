@@ -5,10 +5,14 @@ Narrates each run to the user.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import json
 from datetime import datetime
+import os
+from pathlib import Path
 
 from sutradhara_flow import SutradharaFlow
 from sukshmadarshini_observer import SukshmadarshiniObserver
@@ -25,6 +29,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files (React frontend)
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Global state
 flow = SutradharaFlow()
@@ -418,3 +427,13 @@ def generate_map_html():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# Catch-all route for React SPA - must be last
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    """Serve React index.html for all non-API routes."""
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    return {"detail": "Not Found"}
