@@ -1,35 +1,8 @@
-crewai==1.15.41
-pydantic==2.12.0
+crewai>=1.15.0
 fastapi==0.109.0
 uvicorn==0.27.0
-sqlalchemy==2.0.25
-faiss-cpu==1.7.4
-sentence-transformers==2.2.2
-pandas==2.1.4
-numpy==1.24.3
-python-dotenv==1.0.0
-
-# Phase 2: Enhanced Framework Integration
-anthropic==0.7.0
-httpx==0.24.1
-requests==2.31.0
-pyyaml==6.0
-
-# MCP Integration
-pydantic-core==2.16.0
-
-# Cloud Deployment
-boto3==1.28.0
-docker==6.1.0
-
-# Observability (compatible with crewai)
-opentelemetry-api==1.45.1
-opentelemetry-sdk==1.45.1
-
-# Testing & Evaluation
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-
-# Map Tracking & Visualization
-folium==0.14.0
+python-dotenv>=1.2.2
+httpx>=0.24.0
+requests>=2.31.0
+pyyaml>=6.0
+folium>=0.14.0
