@@ -24,16 +24,11 @@ app = FastAPI(title="FoodRescue-MAS API", version="0.1.0")
 # Add CORS middleware to allow requests from React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Mount static files (React frontend)
-static_dir = Path(__file__).parent / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Global state
 flow = SutradharaFlow()
@@ -429,11 +424,16 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-# Catch-all route for React SPA - must be last
-@app.get("/{full_path:path}")
-async def catch_all(full_path: str):
-    """Serve React index.html for all non-API routes."""
-    index_path = Path(__file__).parent / "static" / "index.html"
-    if index_path.exists():
-        return FileResponse(index_path)
-    return {"detail": "Not Found"}
+# Mount static files for React frontend - must be after all API routes
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+else:
+    # Fallback: Create a simple index if static dir doesn't exist
+    @app.get("/{full_path:path}")
+    async def catch_all(full_path: str):
+        """Serve React index.html for all non-API routes."""
+        index_path = Path(__file__).parent / "static" / "index.html"
+        if index_path.exists():
+            return FileResponse(index_path)
+        return {"detail": "Static files not found. Ensure frontend is built and copied to /app/static"}

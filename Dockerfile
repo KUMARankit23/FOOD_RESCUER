@@ -27,6 +27,9 @@ COPY *.py ./
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist /app/static
 
+# Ensure static directory exists
+RUN mkdir -p /app/static
+
 # Expose ports
 EXPOSE 8000
 
