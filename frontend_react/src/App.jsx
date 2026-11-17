@@ -7,6 +7,7 @@ import { LoadingState } from './components/common/LoadingState';
 
 // Pages - Lazy load
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const AgentDashboard = React.lazy(() => import('./pages/AgentDashboard'));
 const SubmitReport = React.lazy(() => import('./pages/SubmitReport'));
 const Operations = React.lazy(() => import('./pages/Operations'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
@@ -35,6 +36,7 @@ function App() {
               <Suspense fallback={<LoadingState message="Loading page..." />}>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/agent" element={<AgentDashboard />} />
                   <Route path="/submit" element={<SubmitReport />} />
                   <Route path="/operations" element={<Operations />} />
                   <Route path="/analytics" element={<Analytics />} />
