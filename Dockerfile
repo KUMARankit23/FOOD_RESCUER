@@ -1,40 +1,40 @@
-# Multi-stage build for Food Rescue MAS
+# Multi-stage production build
 
-# Stage 1: Build Frontend
+# Stage 1: Frontend build
 FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend_react/package*.json ./
-RUN npm install --prefer-offline --no-audit
-COPY frontend_react/ ./
-RUN npm run build
+RUN npm ci --production && npm run build
 
-# Stage 2: Backend
+# Stage 2: Python runtime
 FROM python:3.10-slim
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    gcc postgresql-client curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend files
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy Python files
+# Copy backend
 COPY *.py ./
 
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist /app/static
 
-# Ensure static directory exists
-RUN mkdir -p /app/static
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Expose ports
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
 EXPOSE 8000
 
-# Set environment
-ENV PYTHONUNBUFFERED=1
+# Run with gunicorn for production
+CMD ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 
-# Run backend
-CMD ["python", "api.py"]

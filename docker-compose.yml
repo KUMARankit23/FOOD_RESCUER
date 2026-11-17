@@ -1,37 +1,54 @@
 version: '3.8'
 
 services:
-  # Backend API
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: foodrescue
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: food_rescue_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodrescue"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://foodrescue:secure_password@postgres:5432/food_rescue_db
+      REDIS_URL: redis://redis:6379
+      LLM_PROVIDER: google_gemini
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      PYTHONUNBUFFERED: 1
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - BACKEND_PORT=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
-      - ./:/app
-    command: python api.py
+      - ./chroma_data:/app/chroma_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
 
-  # Frontend (alternative - for development)
-  frontend:
-    build:
-      context: ./frontend_react
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://backend:8000
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend_react:/app
-      - /app/node_modules
+volumes:
+  postgres_data:
