@@ -5,12 +5,13 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: foodrescue
-      POSTGRES_PASSWORD: secure_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
       POSTGRES_DB: food_rescue_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U foodrescue"]
       interval: 10s
@@ -21,6 +22,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -28,13 +30,16 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgresql://foodrescue:secure_password@postgres:5432/food_rescue_db
+      DATABASE_URL: postgresql://foodrescue:${DB_PASSWORD:-secure_password}@postgres:5432/food_rescue_db
       REDIS_URL: redis://redis:6379
-      LLM_PROVIDER: google_gemini
+      LLM_PROVIDER: ${LLM_PROVIDER:-google_gemini}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       PYTHONUNBUFFERED: 1
+      DEBUG: "false"
     ports:
       - "8000:8000"
     depends_on:
@@ -44,11 +49,14 @@ services:
         condition: service_healthy
     volumes:
       - ./chroma_data:/app/chroma_data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
 
 volumes:
   postgres_data:
+

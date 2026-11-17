@@ -4,7 +4,7 @@
 FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend_react/package*.json ./
-RUN npm ci --production && npm run build
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi && npm run build
 
 # Stage 2: Python runtime
 FROM python:3.10-slim
