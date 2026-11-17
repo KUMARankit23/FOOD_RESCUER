@@ -419,21 +419,34 @@ def generate_map_html():
     }
 
 
+@app.get("/")
+async def serve_index():
+    """Serve React index.html at root."""
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    return {"detail": "Frontend not available"}
+
+
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    """Serve static files and React SPA - must be LAST route."""
+    # Skip /api routes - they should be handled by other route handlers
+    # FastAPI will return 404 automatically if no matching route exists
+    
+    # Try to serve as static file first
+    file_path = Path(__file__).parent / "static" / full_path
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(file_path)
+    
+    # Fall back to index.html for SPA routing (for React Router)
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path, media_type="text/html")
+    
+    return {"detail": "Not Found"}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-# Mount static files for React frontend - must be after all API routes
-static_dir = Path(__file__).parent / "static"
-if static_dir.exists():
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
-else:
-    # Fallback: Create a simple index if static dir doesn't exist
-    @app.get("/{full_path:path}")
-    async def catch_all(full_path: str):
-        """Serve React index.html for all non-API routes."""
-        index_path = Path(__file__).parent / "static" / "index.html"
-        if index_path.exists():
-            return FileResponse(index_path)
-        return {"detail": "Static files not found. Ensure frontend is built and copied to /app/static"}
