@@ -1,8 +1,7 @@
-crewai==0.45.0
+crewai==1.15.41
 pydantic==2.6.3
 fastapi==0.109.0
 uvicorn==0.27.0
-streamlit==1.32.0
 sqlalchemy==2.0.25
 faiss-cpu==1.7.4
 sentence-transformers==2.2.2
@@ -11,7 +10,6 @@ numpy==1.24.3
 python-dotenv==1.0.0
 
 # Phase 2: Enhanced Framework Integration
-google-ai-python==0.2.0
 anthropic==0.7.0
 httpx==0.24.1
 requests==2.31.0
@@ -20,13 +18,8 @@ pyyaml==6.0
 # MCP Integration
 pydantic-core==2.16.0
 
-# Guardrails & Security
-guardrails-ai==0.1.0
-
 # Cloud Deployment
 boto3==1.28.0
-google-cloud-run==0.4.0
-azure-identity==1.14.0
 docker==6.1.0
 
 # Observability
