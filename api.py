@@ -37,10 +37,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global state
-flow = SutradharaFlow()
+# Database initialization
+from db_models import init_db, get_db, SessionLocal, RescueRun as RescueRunDB, AuditLog as AuditLogDB
+init_db()
+
+# Global instances
+flow = None  # Will be initialized per request
 observer = SukshmadarshiniObserver()
-run_history = {}
 
 
 # Pydantic models for API
@@ -77,23 +80,37 @@ def health_check():
 def submit_report(request: SurplusReportRequest):
     """
     Submit a surplus report, run the Flow, return the FinalDecision and run_id.
+    Data persisted to database.
     """
+    from sutradhara_flow import SutradharaFlow
     
-    report_dict = request.dict()
-    
-    result = flow.execute_flow(report_dict)
-    run_id = result["run_id"]
-    
-    # Store in history
-    run_history[run_id] = result
-    
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    
-    return {
-        "run_id": run_id,
-        "final_decision": result.get("final_decision"),
-    }
+    db = SessionLocal()
+    try:
+        report_dict = request.dict()
+        
+        flow = SutradharaFlow(db=db)
+        result = flow.execute_flow(report_dict)
+        run_id = result["run_id"]
+        
+        # Save to database
+        rescue_run = RescueRunDB(
+            id=run_id,
+            status="completed" if "error" not in result else "failed",
+            trace_data=result.get("trace", {}),
+            error_message=result.get("error")
+        )
+        db.add(rescue_run)
+        db.commit()
+        
+        if "error" in result:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return {
+            "run_id": run_id,
+            "final_decision": result.get("final_decision"),
+        }
+    finally:
+        db.close()
 
 
 @app.get("/api/v1/runs")

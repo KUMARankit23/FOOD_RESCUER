@@ -1,30 +1,34 @@
 """
 Sutradhara: The orchestrator and flow controller.
-Manages state, routing, schema validation, and retry logic.
+Manages state, routing, schema validation, database persistence, and retry logic.
 """
 
 import json
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
+from sqlalchemy.orm import Session
 from schemas import SurplusReport, ValidatedRecord, RankedMatches, SafetyDecision, FinalDecision
 from agents import (
     EklavyaIntakeAgent, ArjunaMatchingAgent, DronacharyyaSafetyAgent, ChanakyaLogisticsAgent
 )
+from db_models import RescueRun, FoodReport, AgentExecution, AuditLog, SessionLocal, RunStatus
 
 
 class SutradharaFlow:
     """
-    Central orchestrator for the CrewAI flow.
+    Central orchestrator for the AI workflow.
     - Creates run ID
     - Passes state through agents
     - Validates schemas at every handoff
     - Retries once on schema failure
+    - Persists state to database
     - Records full trace
     """
     
-    def __init__(self):
-        self.run_log = {}
+    def __init__(self, db: Optional[Session] = None):
+        self.run_log = {}  # In-memory for speed
+        self.db = db
         self.agents = {
             "eklavya": EklavyaIntakeAgent(),
             "arjuna": ArjunaMatchingAgent(),
