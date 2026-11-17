@@ -36,7 +36,7 @@ class SutradharaFlow:
             "chanakya": ChanakyaLogisticsAgent(),
         }
     
-    def execute_flow(self, surplus_report: dict) -> Dict[str, Any]:
+    def execute_flow(self, surplus_report: dict, use_db: bool = True) -> Dict[str, Any]:
         """
         Execute the full flow: report → eklavya → arjuna → dronacharya → chanakya → decision.
         """
