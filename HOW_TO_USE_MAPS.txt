@@ -1,0 +1,279 @@
+================================================================================
+                    🗺️  HOW TO TRACK VIA MAPS
+================================================================================
+
+THREE WAYS TO ACCESS MAP TRACKING:
+
+================================================================================
+METHOD 1: WEB DASHBOARD (EASIEST - RECOMMENDED)
+================================================================================
+
+STEP 1: Open Dashboard
+  → Go to: http://localhost:8501
+
+STEP 2: Navigate to Map
+  → Look for sidebar on the left
+  → Click: "Map Tracking"
+
+STEP 3: See Your Map
+  → Interactive map appears
+  → Shows all donor and recipient locations
+  → Shows active delivery routes
+
+STEP 4: Understand the Map
+  🔴 Red Pins   = Food Sources (Donors)
+  🟢 Green Pins = Food Recipients
+  🔵 Blue Lines = Delivery Routes
+  📍 Circles    = Active Dispatches
+
+STEP 5: View Statistics
+  Below the map, you'll see:
+  - Total Dispatches
+  - Distance Covered (km)
+  - Active Routes
+  - Delivery Status
+
+STEP 6: Download Map
+  → Click: "📥 Download Map as HTML"
+  → Save as: operation_map.html
+  → Share with stakeholders
+
+================================================================================
+METHOD 2: REST API (FOR DEVELOPERS)
+================================================================================
+
+GET ALL TRACKING DATA:
+  curl http://localhost:8000/api/v1/map/tracking
+
+GET STATISTICS:
+  curl http://localhost:8000/api/v1/map/statistics
+
+GET DONOR LOCATIONS:
+  curl http://localhost:8000/api/v1/map/donors
+
+GET RECIPIENT LOCATIONS:
+  curl http://localhost:8000/api/v1/map/recipients
+
+GET DISPATCH HISTORY:
+  curl http://localhost:8000/api/v1/map/history
+
+GENERATE HTML MAP:
+  curl -X POST http://localhost:8000/api/v1/map/generate-html
+
+================================================================================
+METHOD 3: PYTHON INTEGRATION
+================================================================================
+
+import requests
+
+# Get all tracking data
+response = requests.get('http://localhost:8000/api/v1/map/tracking')
+data = response.json()
+
+# Print dispatch details
+for dispatch in data['dispatches']:
+    print(f"From: {dispatch['donor_location']}")
+    print(f"To: {dispatch['recipient_name']}")
+    print(f"Status: {dispatch['status']}")
+    print()
+
+================================================================================
+POPULATE THE MAP: SUBMIT A REPORT
+================================================================================
+
+1. Using Web Dashboard:
+   → Go to: http://localhost:8501
+   → Click: "Submit Report"
+   → Fill in form:
+     * Food Type: "vegetable biryani"
+     * Quantity: 60 portions
+     * Temperature: 58°C
+     * Location: "Hostel Mess A"
+     * Pickup Deadline: "20:00"
+   → Click: "Submit Report"
+
+2. Using API:
+   
+   curl -X POST http://localhost:8000/api/v1/reports \
+     -H "Content-Type: application/json" \
+     -d '{
+       "food_type": "vegetable biryani",
+       "quantity": 60,
+       "prep_time": "14:00",
+       "temperature_c": 58.0,
+       "location": "Hostel Mess A",
+       "pickup_deadline": "20:00"
+     }'
+
+================================================================================
+MAP ELEMENTS EXPLAINED
+================================================================================
+
+DONOR LOCATIONS (🔴 Red):
+  - Hostel Mess A       (40.8075, -73.9626)
+  - Hostel Mess B       (40.8049, -73.9649)
+  - Canteen             (40.8048, -73.9645)
+  - Event Hall          (40.8060, -73.9630)
+  - Sports Complex      (40.8090, -73.9620)
+
+RECIPIENT LOCATIONS (🟢 Green):
+  - r1: Community Kitchen A    (40.7128, -74.0060) Capacity: 100
+  - r2: Shelter B              (40.7580, -73.9855) Capacity: 150
+  - r3: NGO Feeding Center     (40.7489, -73.9680) Capacity: 80
+
+DELIVERY ROUTES (🔵 Blue):
+  - Each line represents a food rescue operation
+  - Color indicates status:
+    🟠 Orange = Pending (waiting to pickup)
+    🔵 Blue   = In Transit (actively delivering)
+    🟢 Green  = Arrived (at destination)
+    ⚫ Gray    = Delivered (completed)
+
+ACTIVE DISPATCH (🟦 Circle):
+  - Shows current operation
+  - Click to see details
+  - Displays ETA and quantity
+
+================================================================================
+STATISTICS EXPLAINED
+================================================================================
+
+Total Dispatches
+  → How many food rescue operations in total
+  → Increases each time food is dispatched
+  → Example: 5 operations = 300 portions redistributed
+
+Distance Covered
+  → Total kilometers traveled
+  → Calculated using GPS coordinates
+  → Helps estimate fuel costs
+  → Example: 12.5 km for current operations
+
+Active Routes
+  → How many deliveries are happening now
+  → Updates in real-time
+  → Example: 2 trucks on the road
+
+Delivered
+  → Completed operations
+  → Food successfully received by recipients
+  → Example: 3 deliveries finished
+
+Status Distribution
+  → Breakdown by status
+  → Pending: Waiting to pick up
+  → In Transit: On the way
+  → Delivered: Already delivered
+
+================================================================================
+QUICK EXAMPLES
+================================================================================
+
+EXAMPLE 1: View One Report's Route
+  1. Submit Report (web dashboard or API)
+  2. Go to Map Tracking
+  3. See the new route appear on map
+  4. Click on route to see details
+
+EXAMPLE 2: Submit Multiple Reports
+  1. Submit 3 different reports from different locations
+  2. Go to Map Tracking
+  3. See 3 routes all at once
+  4. Check distance and statistics
+
+EXAMPLE 3: Monitor in Real-Time
+  1. Have Map open in browser
+  2. Submit reports one by one
+  3. Watch map update live
+  4. See statistics change
+
+EXAMPLE 4: Export Map
+  1. Prepare data (submit some reports)
+  2. Open Map Tracking page
+  3. Click "Download Map as HTML"
+  4. Share operation_map.html file
+
+================================================================================
+SERVICES CHECK
+================================================================================
+
+Is API running?
+  → Check: http://localhost:8000/health
+  → Should see: {"status": "healthy"}
+
+Is Dashboard running?
+  → Check: http://localhost:8501
+  → Should load the Streamlit interface
+
+Is Map loaded?
+  → Go to: http://localhost:8501
+  → Click: "Map Tracking"
+  → Should see interactive map
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: No map showing on dashboard
+Solution:
+  1. Restart Streamlit (Stop and start)
+  2. Try refreshing the page
+  3. Check browser console for errors
+
+Problem: No data appearing on map
+Solution:
+  1. Submit a report first
+  2. Refresh the dashboard
+  3. The route should appear
+
+Problem: API not responding
+Solution:
+  1. Check if API is running: curl http://localhost:8000/health
+  2. Restart API if needed
+  3. Check for port conflicts
+
+Problem: Coordinates wrong
+Solution:
+  1. Verify coordinates in tools.py
+  2. Format should be [latitude, longitude]
+  3. Example: (40.8075, -73.9626) is correct
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. ✅ Open Dashboard: http://localhost:8501
+2. ✅ Navigate to: "Map Tracking" page
+3. ✅ Submit a report using the web form
+4. ✅ Refresh and see route appear on map
+5. ✅ View statistics below map
+6. ✅ Try downloading the map as HTML
+
+================================================================================
+FILES TO READ FOR MORE INFO
+================================================================================
+
+- MAP_QUICK_START.md      ← Start here (2 minutes)
+- MAP_TRACKING_GUIDE.md   ← Full documentation
+- MAP_TRACKING_SUMMARY.md ← Complete summary
+- HOW_TO_USE_MAPS.txt     ← This file
+
+================================================================================
+SERVICES STATUS
+================================================================================
+
+✅ REST API:           http://localhost:8000
+✅ Streamlit Dashboard: http://localhost:8501
+✅ Map Feature:        Ready to use
+
+Location to access maps: http://localhost:8501 → "Map Tracking"
+
+================================================================================
+                        🎉 YOU'RE READY TO TRACK!
+================================================================================
+
+Open: http://localhost:8501
+Click: "Map Tracking" in the sidebar
+View: Real-time map of all food rescue operations
+
+Happy tracking! 🗺️

@@ -1,0 +1,21 @@
+{
+  "build": {
+    "builder": "dockerfile",
+    "context": "."
+  },
+  "deploy": {
+    "startCommand": "python api.py",
+    "restartPolicyMaxRetries": 10,
+    "restartPolicyWindowSeconds": 60
+  },
+  "variables": {
+    "BACKEND_PORT": {
+      "description": "Port for backend API",
+      "value": "8000"
+    },
+    "PYTHONUNBUFFERED": {
+      "description": "Python unbuffered output",
+      "value": "1"
+    }
+  }
+}
