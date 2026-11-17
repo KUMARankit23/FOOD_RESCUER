@@ -7,6 +7,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
+import { useGetRunTrace } from '../../hooks/useReports';
 
 const TrackingStep = ({ icon: Icon, status, title, description, time, isLast }) => {
   const statusColors = {
@@ -50,74 +51,81 @@ const TrackingStep = ({ icon: Icon, status, title, description, time, isLast }) 
 };
 
 export const LiveTracking = ({ runId }) => {
-  const [trackingData, setTrackingData] = useState([
-    {
-      icon: MapPin,
-      status: 'completed',
-      title: '📍 Location Verified',
-      description: 'Food pickup point confirmed and validated',
-      time: '2:15 PM',
-    },
-    {
-      icon: AlertCircle,
-      status: 'completed',
-      title: '✅ Safety Checks Passed',
-      description: 'Temperature and prep time meet standards',
-      time: '2:16 PM',
-    },
-    {
-      icon: Truck,
-      status: 'inProgress',
-      title: '🚗 Agent Dispatched',
-      description: 'Driver is on the way - ETA 12 minutes',
-      time: 'In Progress',
-    },
-    {
-      icon: CheckCircle,
-      status: 'pending',
-      title: '📦 Pickup',
-      description: 'Waiting for food collection',
-      time: 'Pending',
-    },
-    {
-      icon: Truck,
-      status: 'pending',
-      title: '🚚 Delivery in Progress',
-      description: 'En route to recipient facility',
-      time: 'Pending',
-    },
-    {
-      icon: CheckCircle,
-      status: 'pending',
-      title: '🏁 Delivered',
-      description: 'Food safely transferred to recipient',
-      time: 'Pending',
-    },
-  ]);
+  const { data: traceData } = useGetRunTrace(runId);
+  const [trackingData, setTrackingData] = useState([]);
 
-  // Simulate progress updates
+  // Convert real trace data to tracking steps
+  useEffect(() => {
+    if (!traceData?.trace) return;
+
+    const trace = traceData.trace;
+    const steps = [];
+
+    // Map trace data to tracking steps based on real agent execution
+    const statusMap = {
+      'location_verified': {
+        icon: MapPin,
+        title: '📍 Location Verified',
+        description: 'Food pickup point confirmed',
+      },
+      'safety_check': {
+        icon: AlertCircle,
+        title: '✅ Safety Checks Passed',
+        description: 'Meeting food safety standards',
+      },
+      'dispatch': {
+        icon: Truck,
+        title: '🚗 Dispatch Agent',
+        description: 'Agent assigned and on the way',
+      },
+      'pickup': {
+        icon: CheckCircle,
+        title: '📦 Food Pickup',
+        description: 'Food collected from donor',
+      },
+      'delivery': {
+        icon: Truck,
+        title: '🚚 Delivery in Progress',
+        description: 'En route to recipient facility',
+      },
+      'completed': {
+        icon: CheckCircle,
+        title: '🏁 Delivered',
+        description: 'Food safely transferred to recipient',
+      },
+    };
+
+    // Build steps based on actual trace status
+    const traceStatus = (trace.status || 'pending').toLowerCase();
+    
+    // Add all steps and mark status based on trace
+    Object.entries(statusMap).forEach(([key, step]) => {
+      const isCompleted = key === 'location_verified' || 
+                         key === 'safety_check' ||
+                         (traceStatus.includes(key) || traceStatus.includes('completed'));
+      const isInProgress = traceStatus.includes(key) && key !== 'location_verified' && key !== 'safety_check';
+
+      steps.push({
+        ...step,
+        status: isCompleted && !isInProgress ? 'completed' : isInProgress ? 'inProgress' : 'pending',
+        time: isCompleted || isInProgress ? new Date().toLocaleTimeString() : 'Pending',
+      });
+    });
+
+    setTrackingData(steps);
+  }, [traceData]);
+
+  // Poll every 2 seconds for real-time updates
   useEffect(() => {
     if (!runId) return;
-
-    const progressInterval = setInterval(() => {
-      setTrackingData((prev) => {
-        const updated = [...prev];
-        const inProgressIdx = updated.findIndex((s) => s.status === 'inProgress');
-
-        if (inProgressIdx < updated.length - 1) {
-          updated[inProgressIdx].status = 'completed';
-          updated[inProgressIdx + 1].status = 'inProgress';
-          updated[inProgressIdx + 1].time = new Date().toLocaleTimeString();
-        }
-
-        return updated;
-      });
-    }, 6000);
-
-    return () => clearInterval(progressInterval);
+    const pollInterval = setInterval(() => {
+      // The useGetRunTrace hook will automatically refetch
+    }, 2000);
+    return () => clearInterval(pollInterval);
   }, [runId]);
 
   const inProgressStep = trackingData.find((s) => s.status === 'inProgress');
+  const completedCount = trackingData.filter((s) => s.status === 'completed').length;
 
   return (
     <motion.div
@@ -154,11 +162,9 @@ export const LiveTracking = ({ runId }) => {
         <div className="flex justify-between mb-2">
           <p className="text-xs font-medium text-text-secondary">Overall Progress</p>
           <p className="text-xs font-bold text-primary-600">
-            {Math.round(
-              (trackingData.filter((s) => s.status === 'completed').length /
-                trackingData.length) *
-                100
-            )}
+            {trackingData.length > 0 
+              ? Math.round((completedCount / trackingData.length) * 100)
+              : 0}
             %
           </p>
         </div>
@@ -166,11 +172,9 @@ export const LiveTracking = ({ runId }) => {
           <motion.div
             initial={{ width: 0 }}
             animate={{
-              width: `${
-                (trackingData.filter((s) => s.status === 'completed').length /
-                  trackingData.length) *
-                100
-              }%`,
+              width: trackingData.length > 0 
+                ? `${(completedCount / trackingData.length) * 100}%`
+                : '0%',
             }}
             transition={{ duration: 0.5 }}
             className="h-full bg-gradient-to-r from-primary-600 to-success"

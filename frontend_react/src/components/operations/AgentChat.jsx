@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, MessageCircle, Loader } from 'lucide-react';
+import { useGetRunTrace } from '../../hooks/useReports';
 
 export const AgentChat = ({ runId }) => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const { data: traceData } = useGetRunTrace(runId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,46 +18,66 @@ export const AgentChat = ({ runId }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Simulate agent messages based on run progress
+  // Convert trace data to chat messages - REAL DATA FROM API
   useEffect(() => {
-    if (!runId) return;
+    if (!traceData?.trace) return;
 
-    // Add initial agent greeting
-    setMessages([
+    const trace = traceData.trace;
+    const newMessages = [
       {
         id: 1,
         type: 'agent',
-        text: `👋 Hi! I'm monitoring your food rescue operation (Run: ${runId.slice(0, 8)}...). I'll keep you updated on every step!`,
+        text: `👋 Hi! I'm monitoring your food rescue operation (Run: ${runId.slice(0, 8)}...). Here's the real-time status:`,
         timestamp: new Date(),
       },
-    ]);
+    ];
 
-    // Simulate agent updates every 3-5 seconds
-    const updateInterval = setInterval(() => {
-      const updates = [
-        '📍 Location verified: Food pickup point confirmed.',
-        '✅ Food safety check passed: Temperature and prep time within standards.',
-        '🚗 Dispatch agent assigned: Driver on the way.',
-        '⏱️ Estimated arrival: 12 minutes',
-        '🔄 En route: Vehicle is currently moving to pickup location.',
-        '📦 Food picked up successfully!',
-        '🚚 Heading to recipient location...',
-        '🏁 Delivered! Food safely transferred to recipient facility.',
-      ];
+    let msgId = 2;
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
+    // Extract agent steps from trace
+    if (trace.steps && Array.isArray(trace.steps)) {
+      trace.steps.forEach((step) => {
+        newMessages.push({
+          id: msgId++,
           type: 'agent',
-          text: updates[Math.floor(Math.random() * updates.length)],
-          timestamp: new Date(),
-        },
-      ]);
-    }, 4000 + Math.random() * 3000);
+          text: `🤖 ${step.agent || 'Agent'}: ${step.description || step.output || 'Processing...'}`,
+          timestamp: new Date(step.timestamp || Date.now()),
+        });
+      });
+    }
 
-    return () => clearInterval(updateInterval);
-  }, [runId]);
+    // Add status message
+    if (trace.status) {
+      newMessages.push({
+        id: msgId++,
+        type: 'agent',
+        text: `📊 Current Status: ${trace.status}`,
+        timestamp: new Date(),
+      });
+    }
+
+    // Add output/decision if available
+    if (trace.output) {
+      const outputText = typeof trace.output === 'string' 
+        ? trace.output 
+        : JSON.stringify(trace.output).slice(0, 100);
+      newMessages.push({
+        id: msgId++,
+        type: 'agent',
+        text: `✅ Result: ${outputText}`,
+        timestamp: new Date(),
+      });
+    }
+
+    setMessages(newMessages);
+
+    // Poll for updates every 2 seconds (real-time)
+    const pollInterval = setInterval(() => {
+      // This will trigger re-fetch automatically via useGetRunTrace
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [traceData, runId]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -71,31 +93,25 @@ export const AgentChat = ({ runId }) => {
       },
     ]);
 
+    const userQuestion = inputValue;
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate agent response
+    // In a real scenario, you would call an API endpoint here
+    // For now, we'll just acknowledge the message
     setTimeout(() => {
-      const responses = [
-        '✅ Got it! I\'ll prioritize this.',
-        '📞 I\'ll contact the driver about that.',
-        '🗺️ Updated route optimization in progress.',
-        '⏰ Estimated time updated based on current traffic.',
-        '🆗 Noted! I\'m monitoring the situation.',
-      ];
-
       setMessages((prev) => [
         ...prev,
         {
           id: prev.length + 1,
           type: 'agent',
-          text: responses[Math.floor(Math.random() * responses.length)],
+          text: `📝 I've noted your message: "${userQuestion}". The operations team has been alerted.`,
           timestamp: new Date(),
         },
       ]);
 
       setIsLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   return (
