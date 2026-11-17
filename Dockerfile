@@ -4,7 +4,7 @@
 FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend_react/package*.json ./
-RUN npm ci --prefer-offline --no-audit
+RUN npm install --prefer-offline --no-audit
 COPY frontend_react/ ./
 RUN npm run build
 
