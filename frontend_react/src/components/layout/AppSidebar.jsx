@@ -12,12 +12,14 @@ import {
   ChevronRight,
   Leaf,
   Zap,
+  Truck,
 } from 'lucide-react';
 import { APP_NAME } from '../../utils/constants';
 
 const navItems = [
   { path: '/', label: 'Overview', icon: LayoutDashboard },
   { path: '/agent', label: 'Agent Center', icon: Zap },
+  { path: '/picker', label: 'Picker App', icon: Truck },
   { path: '/submit', label: 'Submit Food', icon: Plus },
   { path: '/operations', label: 'Operations', icon: Briefcase },
   { path: '/analytics', label: 'Analytics', icon: BarChart3 },
